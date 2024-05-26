@@ -32,11 +32,18 @@ func (s *Stress) Run() *stressReport {
 	statusCounts := make(map[int]int)
 	var totalRequests, successRequests = 0, 0
 
-	for range s.nCurrency {
+	requestsPerGoroutine := s.nRequest / s.nCurrency
+	remainingRequests := s.nRequest % s.nCurrency
+
+	for index := range s.nCurrency {
 		wg.Add(1)
-		go func() {
+		go func(index int) {
 			defer wg.Done()
-			for range s.nRequest / s.nCurrency {
+			requestsToExecute := requestsPerGoroutine
+			if index < remainingRequests {
+				requestsToExecute++
+			}
+			for range requestsToExecute {
 				resp, err := http.Get(s.url)
 				if err != nil {
 					return
@@ -51,7 +58,7 @@ func (s *Stress) Run() *stressReport {
 				totalRequests++
 				mutex.Unlock()
 			}
-		}()
+		}(index)
 	}
 	wg.Wait()
 

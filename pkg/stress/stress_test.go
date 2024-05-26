@@ -42,7 +42,7 @@ func TestStressTest(t *testing.T) {
 	assert.Equal(t, 30, report.StatusCounts[http.StatusNotFound])
 }
 
-func BenchmarkStressTestStress(b *testing.B) {
+func BenchmarkStressTest(b *testing.B) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}))
@@ -54,4 +54,26 @@ func BenchmarkStressTestStress(b *testing.B) {
 	for range b.N {
 		s.Run()
 	}
+}
+
+func FuzzStressTestNConcurrency(f *testing.F) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	nRequest := 10000
+	seedNConcurrency := []int{1, 3, 7, 10}
+	for _, nConcurrency := range seedNConcurrency {
+		f.Add(nConcurrency)
+	}
+
+	f.Fuzz(func(t *testing.T, nConcurrency int) {
+		s := stress.NewStress(server.URL, nRequest, nConcurrency)
+		report := s.Run()
+
+		if report.TotalRequests != nRequest {
+			t.Errorf("Received %d, but requests %d", report.TotalRequests, nRequest)
+		}
+	})
 }
