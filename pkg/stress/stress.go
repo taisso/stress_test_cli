@@ -1,6 +1,7 @@
 package stress
 
 import (
+	"math"
 	"net/http"
 	"sync"
 	"time"
@@ -20,7 +21,10 @@ type stressReport struct {
 }
 
 func NewStress(url string, nRequest int, nCurrency int) *Stress {
-	return &Stress{url, nRequest, nCurrency}
+	nRequestAbs := int(math.Abs(float64(nRequest)))
+	nCurrencyAbs := int(math.Abs(float64(nCurrency)))
+
+	return &Stress{url: url, nRequest: nRequestAbs, nCurrency: nCurrencyAbs}
 }
 
 func (s *Stress) Run() *stressReport {
